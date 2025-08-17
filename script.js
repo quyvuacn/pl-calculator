@@ -1,0 +1,374 @@
+// DOM Elements
+const calculateBtn = document.getElementById("calculateBtn");
+const leverageInput = document.getElementById("leverage");
+const leverageValueEl = document.getElementById("leverageValue");
+const positionTypeSelect = document.getElementById("positionType");
+const entryPriceInput = document.getElementById("entryPrice");
+const capitalInput = document.getElementById("capital");
+const feeTypeSelect = document.getElementById("feeType");
+const takeProfitInput = document.getElementById("takeProfit");
+const stopLossInput = document.getElementById("stopLoss");
+
+// Result elements
+const positionSizeEl = document.getElementById("positionSize");
+const entryFeeEl = document.getElementById("entryFee");
+const exitFeeEl = document.getElementById("exitFee");
+const profitPriceChangeEl = document.getElementById("profitPriceChange");
+const totalFeesEl = document.getElementById("totalFees");
+const profitPnLEl = document.getElementById("profitPnL");
+const profitRoiEl = document.getElementById("profitRoi");
+const profitLeveragedRoiEl = document.getElementById("profitLeveragedRoi");
+
+// Loss column elements
+const positionSizeLossEl = document.getElementById("positionSizeLoss");
+const lossPriceChangeEl = document.getElementById("lossPriceChange");
+const lossPnLEl = document.getElementById("lossPnL");
+const lossRoiEl = document.getElementById("lossRoi");
+const lossLeveragedRoiEl = document.getElementById("lossLeveragedRoi");
+
+// Event Listeners
+// Auto-calculate when inputs change
+[
+  leverageInput,
+  entryPriceInput,
+  capitalInput,
+  takeProfitInput,
+  stopLossInput,
+].forEach((input) => {
+  input.addEventListener("input", calculatePnL);
+});
+
+// Update leverage value display when slider moves
+leverageInput.addEventListener("input", function () {
+  leverageValueEl.textContent = this.value;
+});
+
+// Update calculations when position type or fee type changes
+positionTypeSelect.addEventListener("change", calculatePnL);
+feeTypeSelect.addEventListener("change", updateFeeRate);
+
+// Fee rates based on Bybit Inverse Perpetual & Futures Contract (as of 2024)
+const BYBIT_FEES = {
+  taker: 0.055, // 0.055%
+  maker: 0.02, // 0.02%
+};
+
+// Function to update fee rate based on selected fee type
+function updateFeeRate() {
+  calculatePnL(); // Recalculate with new fee
+}
+
+// Main calculation function
+function calculatePnL() {
+  try {
+    // Get input values
+    const leverage = parseFloat(leverageInput.value) || 0;
+    const positionType = positionTypeSelect.value;
+    const entryPrice = parseFloat(entryPriceInput.value) || 0;
+    const capital = parseFloat(capitalInput.value) || 0;
+    const takeProfit = parseFloat(takeProfitInput.value) || 0;
+    const stopLoss = parseFloat(stopLossInput.value) || 0;
+    const feeType = feeTypeSelect.value;
+    const feeRate = BYBIT_FEES[feeType];
+
+    // Validate inputs
+    if (
+      leverage <= 0 ||
+      entryPrice <= 0 ||
+      capital <= 0 ||
+      takeProfit <= 0 ||
+      stopLoss <= 0
+    ) {
+      clearResults();
+      return;
+    }
+
+    // Calculate position size
+    const positionSize = Math.round(capital * leverage * 100) / 100;
+
+    // Calculate fees (convert percentage to decimal)
+    const feeRateDecimal = feeRate / 100;
+    const entryFee = Math.round(positionSize * feeRateDecimal * 100) / 100;
+    const exitFee = Math.round(positionSize * feeRateDecimal * 100) / 100;
+    const totalFees = Math.round((entryFee + exitFee) * 100) / 100;
+
+    // Calculate P&L for both scenarios
+    let profitPriceChange,
+      profitPriceChangePercent,
+      profitPnL,
+      profitRoi,
+      profitLeveragedRoi;
+    let lossPriceChange,
+      lossPriceChangePercent,
+      lossPnL,
+      lossRoi,
+      lossLeveragedRoi;
+
+    if (positionType === "long") {
+      // Long position calculations
+      // Profit scenario (Take Profit - price goes up)
+      profitPriceChange = takeProfit - entryPrice;
+      profitPriceChangePercent =
+        Math.round((profitPriceChange / entryPrice) * 100 * 100) / 100;
+      // For long: profit when price goes up
+      const profitGrossPnL =
+        Math.round(
+          capital * leverage * (profitPriceChange / entryPrice) * 100
+        ) / 100;
+      profitPnL = Math.round((profitGrossPnL - totalFees) * 100) / 100;
+
+      // Loss scenario (Stop Loss - price goes down)
+      lossPriceChange = stopLoss - entryPrice;
+      lossPriceChangePercent =
+        Math.round((lossPriceChange / entryPrice) * 100 * 100) / 100;
+      // For long: loss when price goes down
+      const lossGrossPnL =
+        Math.round(capital * leverage * (lossPriceChange / entryPrice) * 100) /
+        100;
+      lossPnL = Math.round((lossGrossPnL - totalFees) * 100) / 100; // SUBTRACT fees from loss
+    } else {
+      // Short position calculations
+      // Profit scenario (Take Profit - price goes down)
+      profitPriceChange = entryPrice - takeProfit;
+      profitPriceChangePercent =
+        Math.round((profitPriceChange / entryPrice) * 100 * 100) / 100;
+      // For short: profit when price goes down
+      const profitGrossPnL =
+        Math.round(
+          capital * leverage * (profitPriceChange / entryPrice) * 100
+        ) / 100;
+      profitPnL = Math.round((profitGrossPnL - totalFees) * 100) / 100;
+
+      // Loss scenario (Stop Loss - price goes up)
+      lossPriceChange = entryPrice - stopLoss;
+      lossPriceChangePercent =
+        Math.round((lossPriceChange / entryPrice) * 100 * 100) / 100;
+      // For short: loss when price goes up
+      const lossGrossPnL =
+        Math.round(capital * leverage * (lossPriceChange / entryPrice) * 100) /
+        100;
+      lossPnL = Math.round((lossGrossPnL - totalFees) * 100) / 100; // SUBTRACT fees from loss
+    }
+
+    // Calculate ROI for both scenarios
+    profitRoi = Math.round((profitPnL / capital) * 100 * 100) / 100;
+    profitLeveragedRoi = Math.round(profitRoi * leverage * 100) / 100;
+
+    lossRoi = Math.round((lossPnL / capital) * 100 * 100) / 100;
+    lossLeveragedRoi = Math.round(lossRoi * leverage * 100) / 100;
+
+    // Update UI with results
+    updateResults({
+      positionSize,
+      entryFee,
+      exitFee,
+      totalFees,
+      profitPriceChange,
+      profitPriceChangePercent,
+      profitPnL,
+      profitRoi,
+      profitLeveragedRoi,
+      lossPriceChange,
+      lossPriceChangePercent,
+      lossPnL,
+      lossRoi,
+      lossLeveragedRoi,
+      positionType,
+    });
+  } catch (error) {
+    console.error("Calculation error:", error);
+    clearResults();
+  }
+}
+
+// Update results in the UI
+function updateResults(results) {
+  // Update Profit Column (Take Profit scenario)
+  positionSizeEl.textContent = formatCurrency(results.positionSize);
+  entryFeeEl.textContent = formatCurrency(results.entryFee);
+  exitFeeEl.textContent = formatCurrency(results.exitFee);
+
+  // Format price change for profit scenario
+  const profitPriceChangeFormatted = formatCurrency(results.profitPriceChange);
+  const profitPriceChangePercentFormatted = formatPercentage(
+    results.profitPriceChangePercent
+  );
+  profitPriceChangeEl.textContent = `${profitPriceChangeFormatted} (${profitPriceChangePercentFormatted})`;
+
+  totalFeesEl.textContent = formatCurrency(results.totalFees);
+  profitPnLEl.textContent = formatCurrency(results.profitPnL);
+  profitRoiEl.textContent = formatPercentage(results.profitRoi);
+  profitLeveragedRoiEl.textContent = formatPercentage(
+    results.profitLeveragedRoi
+  );
+
+  // Update Loss Column (Stop Loss scenario)
+  positionSizeLossEl.textContent = formatCurrency(results.positionSize);
+
+  // Format price change for loss scenario
+  const lossPriceChangeFormatted = formatCurrency(results.lossPriceChange);
+  const lossPriceChangePercentFormatted = formatPercentage(
+    results.lossPriceChangePercent
+  );
+  lossPriceChangeEl.textContent = `${lossPriceChangeFormatted} (${lossPriceChangePercentFormatted})`;
+
+  lossPnLEl.textContent = formatCurrency(results.lossPnL);
+
+  // Update ROI for loss scenario
+  lossRoiEl.textContent = formatPercentage(results.lossRoi);
+  lossLeveragedRoiEl.textContent = formatPercentage(results.lossLeveragedRoi);
+
+  // Reset all colors first
+  profitPnLEl.style.color = "";
+  profitRoiEl.style.color = "";
+  profitLeveragedRoiEl.style.color = "";
+  lossPnLEl.style.color = "";
+  lossRoiEl.style.color = "";
+  lossLeveragedRoiEl.style.color = "";
+  profitPriceChangeEl.style.color = "";
+  lossPriceChangeEl.style.color = "";
+
+  // Add color coding for Profit Column - based on actual P&L value
+  if (results.profitPnL >= 0) {
+    // Don't change color for highlighted items - CSS handles it
+  } else {
+    // Don't change color for highlighted items - CSS handles it
+  }
+
+  // Add color coding for Loss Column - based on actual P&L value
+  if (results.lossPnL >= 0) {
+    // Don't change color for highlighted items - CSS handles it
+  } else {
+    // Don't change color for highlighted items - CSS handles it
+  }
+
+  // Add color coding for price changes based on actual values
+  if (results.profitPriceChange >= 0) {
+    profitPriceChangeEl.style.color = "#28a745"; // Green for positive change
+  } else {
+    profitPriceChangeEl.style.color = "#dc3545"; // Red for negative change
+  }
+
+  if (results.lossPriceChange >= 0) {
+    lossPriceChangeEl.style.color = "#28a745"; // Green for positive change
+  } else {
+    lossPriceChangeEl.style.color = "#dc3545"; // Red for negative change
+  }
+}
+
+// Clear all results
+function clearResults() {
+  const profitElements = [
+    positionSizeEl,
+    profitPriceChangeEl,
+    profitPnLEl,
+    profitRoiEl,
+    profitLeveragedRoiEl,
+  ];
+
+  const lossElements = [
+    positionSizeLossEl,
+    lossPriceChangeEl,
+    lossPnLEl,
+    lossRoiEl,
+    lossLeveragedRoiEl,
+  ];
+
+  const feeElements = [entryFeeEl, exitFeeEl, totalFeesEl];
+
+  [...profitElements, ...lossElements, ...feeElements].forEach((el) => {
+    el.textContent = "-";
+    el.style.color = "";
+  });
+}
+
+// Format currency values
+function formatCurrency(value) {
+  if (isNaN(value) || !isFinite(value)) return "-";
+
+  // For very small values, use scientific notation
+  if (Math.abs(value) < 0.01 && value !== 0) {
+    return value.toExponential(4);
+  }
+
+  // For regular values, use USD format with exactly 2 decimal places
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
+// Format percentage values
+function formatPercentage(value) {
+  if (isNaN(value) || !isFinite(value)) return "-";
+
+  return new Intl.NumberFormat("en-US", {
+    style: "percent",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value / 100);
+}
+
+// Initialize calculator with default values
+document.addEventListener("DOMContentLoaded", function () {
+  // Set some realistic default values
+  leverageInput.value = 10;
+  leverageValueEl.textContent = "10";
+  entryPriceInput.value = 50000;
+  capitalInput.value = 100; // $1,000 USD
+  takeProfitInput.value = 55000;
+  stopLossInput.value = 45000;
+
+  // Set initial values
+  positionTypeSelect.value = "long"; // Default to long position
+  feeTypeSelect.value = "taker"; // Default to taker fee
+  updateFeeRate();
+
+  // Calculate initial results
+  calculatePnL();
+});
+
+// Add some helpful tooltips and validation
+function addInputValidation() {
+  // Leverage validation (slider already limits to 1-100)
+  leverageInput.addEventListener("change", function () {
+    const value = parseInt(this.value);
+    if (value < 1) {
+      this.value = 1;
+      leverageValueEl.textContent = "1";
+    } else if (value > 100) {
+      this.value = 100;
+      leverageValueEl.textContent = "100";
+    }
+  });
+
+  // Price validation
+  entryPriceInput.addEventListener("blur", function () {
+    const value = parseFloat(this.value);
+    if (value <= 0) {
+      this.value = 0.01;
+      alert("Giá vào lệnh phải lớn hơn 0.");
+    }
+  });
+
+  takeProfitInput.addEventListener("blur", function () {
+    const value = parseFloat(this.value);
+    if (value <= 0) {
+      this.value = 0.01;
+      alert("Take Profit phải lớn hơn 0.");
+    }
+  });
+
+  stopLossInput.addEventListener("blur", function () {
+    const value = parseFloat(this.value);
+    if (value <= 0) {
+      this.value = 0.01;
+      alert("Stop Loss phải lớn hơn 0.");
+    }
+  });
+}
+
+// Initialize validation
+addInputValidation();

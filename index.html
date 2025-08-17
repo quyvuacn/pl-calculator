@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leverage Trading P&L Calculator</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="container">
+        <div class="calculator-card">
+            <div class="input-section">
+                <h2>Thông Số Đầu Vào</h2>
+
+                <div class="input-group">
+                    <label for="leverage">Đòn Bẩy (x): <span id="leverageValue">10</span></label>
+                    <input type="range" id="leverage" min="1" max="100" value="10" step="1">
+                </div>
+
+                <div class="position-entry-row">
+                    <div class="input-group">
+                        <label for="positionType">Vị Thế</label>
+                        <select id="positionType">
+                            <option value="long">Long</option>
+                            <option value="short">Short</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="entryPrice">Entry Price</label>
+                        <input type="number" id="entryPrice" min="0.000001" value="50000" step="0.01">
+                    </div>
+                </div>
+
+                <div class="price-inputs-row">
+                    <div class="input-group">
+                        <label for="takeProfit">Take Profit</label>
+                        <input type="number" id="takeProfit" min="0.000001" value="55000" step="0.01">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="stopLoss">Stop Loss</label>
+                        <input type="number" id="stopLoss" min="0.000001" value="45000" step="0.01">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="capital">Số Vốn ($)</label>
+                    <input type="number" id="capital" min="1" value="1000" step="1">
+                </div>
+
+                <div class="input-group">
+                    <label for="feeType">Fee Type</label>
+                    <select id="feeType">
+                        <option value="taker">Taker (0.055%)</option>
+                        <option value="maker">Maker (0.02%)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="results-section">
+                <h2>Kết Quả</h2>
+
+                <div class="fees-section">
+                    <div class="fees-grid">
+                        <div class="fee-item">
+                            <span class="label">Phí Vào:</span>
+                            <span id="entryFee" class="value">-</span>
+                        </div>
+                        <div class="fee-item">
+                            <span class="label">Phí Thoát:</span>
+                            <span id="exitFee" class="value">-</span>
+                        </div>
+                        <div class="fee-item total">
+                            <span class="label">Tổng Phí:</span>
+                            <span id="totalFees" class="value">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="results-columns">
+                    <div class="profit-column">
+                        <h3>Profit Scenario</h3>
+                        
+                        <div class="result-item">
+                            <span class="label">Position Size:</span>
+                            <span id="positionSize" class="value">-</span>
+                        </div>
+
+                        <div class="result-item">
+                            <span class="label">Change:</span>
+                            <span id="profitPriceChange" class="value">-</span>
+                        </div>
+
+                        <div class="result-item highlight">
+                            <span class="label">P&L:</span>
+                            <span id="profitPnL" class="value">-</span>
+                        </div>
+
+                        <div class="result-item highlight">
+                            <span class="label">ROI:</span>
+                            <span id="profitRoi" class="value">-</span>
+                        </div>
+
+                        <div class="result-item highlight">
+                            <span class="label">ROI Margin:</span>
+                            <span id="profitLeveragedRoi" class="value">-</span>
+                        </div>
+                    </div>
+
+                    <div class="loss-column">
+                        <h3>Loss Scenario</h3>
+                        
+                        <div class="result-item">
+                            <span class="label">Position Size:</span>
+                            <span id="positionSizeLoss" class="value">-</span>
+                        </div>
+
+                        <div class="result-item">
+                            <span class="label">Change:</span>
+                            <span id="lossPriceChange" class="value">-</span>
+                        </div>
+
+                        <div class="result-item highlight">
+                            <span class="label">P&L:</span>
+                            <span id="lossPnL" class="value">-</span>
+                        </div>
+
+                        <div class="result-item highlight">
+                            <span class="label">ROI:</span>
+                            <span id="lossRoi" class="value">-</span>
+                        </div>
+
+                        <div class="result-item highlight">
+                            <span class="label">ROI Margin:</span>
+                            <span id="lossLeveragedRoi" class="value">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- <div class="iframe-container">
+        <h3 class="iframe-title">Liquidation Heatmap - CoinGlass</h3>
+        <div class="iframe-wrapper">
+            <iframe src="https://www.coinglass.com/pro/futures/LiquidationHeatMap" frameborder="0"></iframe>
+        </div>
+    </div> -->
+
+    <script src="script.js"></script>
+</body>
+
+</html>
