@@ -357,19 +357,128 @@ input:focus, select:focus {
 @media (max-width: 768px) {
     .calculator-card {
         grid-template-columns: 1fr;
+        margin: 10px;
+        border-radius: 15px;
     }
     
     .input-section {
         border-right: none;
         border-bottom: 1px solid #e9ecef;
+        padding: 20px;
+        order: 2;
+    }
+    
+    .results-section {
+        padding: 20px;
+        order: 1;
     }
     
     .container {
         padding: 10px;
+        max-width: 100%;
     }
     
     .input-section, .results-section {
         padding: 18px;
+    }
+
+    .position-entry-row,
+    .price-inputs-row {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .results-columns {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    .profit-column, .loss-column {
+        padding: 15px;
+    }
+
+    .fees-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .fee-item {
+        text-align: center;
+        padding: 10px;
+    }
+
+    h2 {
+        font-size: 1.2rem;
+        margin-bottom: 15px;
+    }
+
+    .input-group {
+        margin-bottom: 14px;
+    }
+
+    label {
+        font-size: 0.9rem;
+        margin-bottom: 5px;
+    }
+
+    input, select {
+        padding: 12px;
+        font-size: 1rem;
+    }
+
+    .result-item {
+        padding: 10px 0;
+    }
+
+    .result-item.highlight {
+        margin: 6px -10px;
+        padding: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    body {
+        padding: 10px;
+    }
+
+    .calculator-card {
+        margin: 5px;
+        border-radius: 12px;
+    }
+
+    .input-section, .results-section {
+        padding: 15px;
+    }
+
+    .input-section {
+        order: 2;
+    }
+
+    .results-section {
+        order: 1;
+    }
+
+    .fees-section {
+        padding: 12px;
+        margin-bottom: 12px;
+    }
+
+    .profit-column, .loss-column {
+        padding: 12px;
+    }
+
+    h2 {
+        font-size: 1.1rem;
+        margin-bottom: 12px;
+    }
+
+    .input-group {
+        margin-bottom: 12px;
+    }
+
+    input, select {
+        padding: 10px;
+        font-size: 0.95rem;
     }
 }
 

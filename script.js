@@ -10,21 +10,17 @@ const takeProfitInput = document.getElementById("takeProfit");
 const stopLossInput = document.getElementById("stopLoss");
 
 // Result elements
-const positionSizeEl = document.getElementById("positionSize");
 const entryFeeEl = document.getElementById("entryFee");
 const exitFeeEl = document.getElementById("exitFee");
 const profitPriceChangeEl = document.getElementById("profitPriceChange");
 const totalFeesEl = document.getElementById("totalFees");
 const profitPnLEl = document.getElementById("profitPnL");
 const profitRoiEl = document.getElementById("profitRoi");
-const profitLeveragedRoiEl = document.getElementById("profitLeveragedRoi");
 
 // Loss column elements
-const positionSizeLossEl = document.getElementById("positionSizeLoss");
 const lossPriceChangeEl = document.getElementById("lossPriceChange");
 const lossPnLEl = document.getElementById("lossPnL");
 const lossRoiEl = document.getElementById("lossRoi");
-const lossLeveragedRoiEl = document.getElementById("lossLeveragedRoi");
 
 // Event Listeners
 // Auto-calculate when inputs change
@@ -184,7 +180,6 @@ function calculatePnL() {
 // Update results in the UI
 function updateResults(results) {
   // Update Profit Column (Take Profit scenario)
-  positionSizeEl.textContent = formatCurrency(results.positionSize);
   entryFeeEl.textContent = formatCurrency(results.entryFee);
   exitFeeEl.textContent = formatCurrency(results.exitFee);
 
@@ -198,13 +193,8 @@ function updateResults(results) {
   totalFeesEl.textContent = formatCurrency(results.totalFees);
   profitPnLEl.textContent = formatCurrency(results.profitPnL);
   profitRoiEl.textContent = formatPercentage(results.profitRoi);
-  profitLeveragedRoiEl.textContent = formatPercentage(
-    results.profitLeveragedRoi
-  );
 
   // Update Loss Column (Stop Loss scenario)
-  positionSizeLossEl.textContent = formatCurrency(results.positionSize);
-
   // Format price change for loss scenario
   const lossPriceChangeFormatted = formatCurrency(results.lossPriceChange);
   const lossPriceChangePercentFormatted = formatPercentage(
@@ -216,31 +206,14 @@ function updateResults(results) {
 
   // Update ROI for loss scenario
   lossRoiEl.textContent = formatPercentage(results.lossRoi);
-  lossLeveragedRoiEl.textContent = formatPercentage(results.lossLeveragedRoi);
 
   // Reset all colors first
   profitPnLEl.style.color = "";
   profitRoiEl.style.color = "";
-  profitLeveragedRoiEl.style.color = "";
   lossPnLEl.style.color = "";
   lossRoiEl.style.color = "";
-  lossLeveragedRoiEl.style.color = "";
   profitPriceChangeEl.style.color = "";
   lossPriceChangeEl.style.color = "";
-
-  // Add color coding for Profit Column - based on actual P&L value
-  if (results.profitPnL >= 0) {
-    // Don't change color for highlighted items - CSS handles it
-  } else {
-    // Don't change color for highlighted items - CSS handles it
-  }
-
-  // Add color coding for Loss Column - based on actual P&L value
-  if (results.lossPnL >= 0) {
-    // Don't change color for highlighted items - CSS handles it
-  } else {
-    // Don't change color for highlighted items - CSS handles it
-  }
 
   // Add color coding for price changes based on actual values
   if (results.profitPriceChange >= 0) {
@@ -259,19 +232,15 @@ function updateResults(results) {
 // Clear all results
 function clearResults() {
   const profitElements = [
-    positionSizeEl,
     profitPriceChangeEl,
     profitPnLEl,
     profitRoiEl,
-    profitLeveragedRoiEl,
   ];
 
   const lossElements = [
-    positionSizeLossEl,
     lossPriceChangeEl,
     lossPnLEl,
     lossRoiEl,
-    lossLeveragedRoiEl,
   ];
 
   const feeElements = [entryFeeEl, exitFeeEl, totalFeesEl];
