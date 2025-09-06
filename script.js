@@ -45,8 +45,9 @@ feeTypeSelect.addEventListener("change", updateFeeRate);
 
 // Fee rates based on Bybit Inverse Perpetual & Futures Contract (as of 2024)
 const BYBIT_FEES = {
-  taker: 0.055, // 0.055%
-  maker: 0.02, // 0.02%
+  taker: 0.055, // 0.055% Open Taker - Close Taker
+  openMakerCloseTaker: 0.0375, // 0.0375% Open Maker - Close Taker
+  maker: 0.02, // 0.02% Open Maker - Close Maker
 };
 
 // Function to update fee rate based on selected fee type
@@ -231,17 +232,9 @@ function updateResults(results) {
 
 // Clear all results
 function clearResults() {
-  const profitElements = [
-    profitPriceChangeEl,
-    profitPnLEl,
-    profitRoiEl,
-  ];
+  const profitElements = [profitPriceChangeEl, profitPnLEl, profitRoiEl];
 
-  const lossElements = [
-    lossPriceChangeEl,
-    lossPnLEl,
-    lossRoiEl,
-  ];
+  const lossElements = [lossPriceChangeEl, lossPnLEl, lossRoiEl];
 
   const feeElements = [entryFeeEl, exitFeeEl, totalFeesEl];
 
