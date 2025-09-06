@@ -1,3 +1,94 @@
+// Function to evaluate mathematical expressions safely (only + and -)
+function evaluateExpression(expression) {
+  try {
+    // Only allow numbers, +, -, and spaces
+    const cleanExpression = expression.replace(/[^0-9+\-.\s]/g, "");
+
+    // Basic validation - only allow numbers and + or -
+    if (!/^[0-9+\-.\s]+$/.test(cleanExpression)) {
+      return null;
+    }
+
+    // Use Function constructor to safely evaluate the expression
+    const result = new Function("return " + cleanExpression)();
+
+    // Check if result is a valid number
+    if (typeof result === "number" && !isNaN(result) && isFinite(result)) {
+      return result;
+    }
+
+    return null;
+  } catch (error) {
+    return null;
+  }
+}
+
+// Function to process input and update the field value
+function processInput(inputElement, originalValue) {
+  const inputValue = inputElement.value.trim();
+
+  // If input contains + or - operators, try to evaluate
+  if (/[+\-]/.test(inputValue)) {
+    const result = evaluateExpression(inputValue);
+    if (result !== null && result > 0) {
+      inputElement.value = result;
+      return result;
+    } else {
+      // If evaluation fails, extract number from input
+      const numberMatch = inputValue.match(/[\d.]+/);
+      if (numberMatch) {
+        const numberValue = parseFloat(numberMatch[0]);
+        if (!isNaN(numberValue) && numberValue > 0) {
+          inputElement.value = numberValue;
+          return numberValue;
+        }
+      }
+      // If no valid number found, revert to original value
+      inputElement.value = originalValue;
+      return originalValue;
+    }
+  }
+
+  // If no operators, return the parsed number
+  const parsedValue = parseFloat(inputValue);
+  return isNaN(parsedValue) ? originalValue : parsedValue;
+}
+
+// Function to calculate Take Profit and Stop Loss based on 6% max loss including fees
+function calculateTakeProfitAndStopLoss(
+  entryPrice,
+  capital,
+  leverage,
+  feeType
+) {
+  if (entryPrice <= 0 || capital <= 0 || leverage <= 0) {
+    return { takeProfit: entryPrice, stopLoss: entryPrice };
+  }
+
+  // Calculate Stop Loss based on 6% of capital (vốn ban đầu) including fees
+  const maxLossAmount = capital * 0.06; // 6% of capital (vốn ban đầu) including fees
+  const positionSize = capital * leverage;
+
+  // Get current fee rate
+  const feeRate = BYBIT_FEES[feeType] / 100; // Convert to decimal
+  const totalFeeRate = feeRate * 2; // Entry + Exit fees
+
+  // Calculate fees for the position
+  const totalFees = positionSize * totalFeeRate;
+
+  // Calculate price change needed to lose 6% of capital (including fees)
+  const netLossAmount = maxLossAmount - totalFees; // Loss amount excluding fees
+  const priceChangeForLoss = (netLossAmount / positionSize) * entryPrice;
+  const stopLoss = Math.round((entryPrice - priceChangeForLoss) * 100) / 100;
+
+  // Calculate Take Profit for 1:2 R:R (2x the loss amount)
+  const priceChangeForProfit = priceChangeForLoss * 2;
+  const takeProfit =
+    Math.round((entryPrice + priceChangeForProfit) * 100) / 100;
+
+  return { takeProfit, stopLoss };
+}
+
 // DOM Elements
 const calculateBtn = document.getElementById("calculateBtn");
 const leverageInput = document.getElementById("leverage");
@@ -23,25 +114,138 @@ const lossPnLEl = document.getElementById("lossPnL");
 const lossRoiEl = document.getElementById("lossRoi");
 
 // Event Listeners
-// Auto-calculate when inputs change
-[
-  leverageInput,
-  entryPriceInput,
-  capitalInput,
-  takeProfitInput,
-  stopLossInput,
-].forEach((input) => {
+// Auto-calculate when inputs change (except Take Profit and Stop Loss)
+[leverageInput, entryPriceInput, capitalInput].forEach((input) => {
   input.addEventListener("input", calculatePnL);
 });
 
 // Update leverage value display when slider moves
 leverageInput.addEventListener("input", function () {
   leverageValueEl.textContent = this.value;
+
+  // Also update Take Profit and Stop Loss when leverage changes
+  const entryPrice = parseFloat(entryPriceInput.value) || 0;
+  const capital = parseFloat(capitalInput.value) || 0;
+  const leverage = parseFloat(this.value) || 1;
+
+  if (entryPrice > 0 && capital > 0) {
+    const feeType = feeTypeSelect.value;
+    const { takeProfit, stopLoss } = calculateTakeProfitAndStopLoss(
+      entryPrice,
+      capital,
+      leverage,
+      feeType
+    );
+    takeProfitInput.value = takeProfit;
+    stopLossInput.value = stopLoss;
+  }
 });
 
-// Update calculations when position type or fee type changes
+// Update Take Profit and Stop Loss when Entry Price changes
+entryPriceInput.addEventListener("input", function () {
+  const newEntryPrice = parseFloat(this.value) || 0;
+  const capital = parseFloat(capitalInput.value) || 0;
+  const leverage = parseFloat(leverageInput.value) || 1;
+
+  if (newEntryPrice > 0 && capital > 0) {
+    const feeType = feeTypeSelect.value;
+    const { takeProfit, stopLoss } = calculateTakeProfitAndStopLoss(
+      newEntryPrice,
+      capital,
+      leverage,
+      feeType
+    );
+    takeProfitInput.value = takeProfit;
+    stopLossInput.value = stopLoss;
+  }
+  calculatePnL(); // Recalculate with new values
+});
+
+// Update Take Profit and Stop Loss when Capital changes
+capitalInput.addEventListener("input", function () {
+  const entryPrice = parseFloat(entryPriceInput.value) || 0;
+  const capital = parseFloat(this.value) || 0;
+  const leverage = parseFloat(leverageInput.value) || 1;
+
+  if (entryPrice > 0 && capital > 0) {
+    const feeType = feeTypeSelect.value;
+    const { takeProfit, stopLoss } = calculateTakeProfitAndStopLoss(
+      entryPrice,
+      capital,
+      leverage,
+      feeType
+    );
+    takeProfitInput.value = takeProfit;
+    stopLossInput.value = stopLoss;
+  }
+  calculatePnL(); // Recalculate with new values
+});
+
+// Update calculations when position type changes
 positionTypeSelect.addEventListener("change", calculatePnL);
-feeTypeSelect.addEventListener("change", updateFeeRate);
+
+// Update Take Profit and Stop Loss when Fee Type changes
+feeTypeSelect.addEventListener("change", function () {
+  const entryPrice = parseFloat(entryPriceInput.value) || 0;
+  const capital = parseFloat(capitalInput.value) || 0;
+  const leverage = parseFloat(leverageInput.value) || 1;
+
+  if (entryPrice > 0 && capital > 0) {
+    const feeType = this.value;
+    const { takeProfit, stopLoss } = calculateTakeProfitAndStopLoss(
+      entryPrice,
+      capital,
+      leverage,
+      feeType
+    );
+    takeProfitInput.value = takeProfit;
+    stopLossInput.value = stopLoss;
+  }
+  calculatePnL(); // Recalculate with new fee
+});
+
+// Add event listeners for Take Profit and Stop Loss to handle mathematical expressions
+takeProfitInput.addEventListener("blur", function () {
+  const originalValue = parseFloat(this.value) || 0;
+  const processedValue = processInput(this, originalValue);
+  calculatePnL(); // Recalculate after processing
+});
+
+stopLossInput.addEventListener("blur", function () {
+  const originalValue = parseFloat(this.value) || 0;
+  const processedValue = processInput(this, originalValue);
+  calculatePnL(); // Recalculate after processing
+});
+
+// Handle Enter key press for immediate calculation
+takeProfitInput.addEventListener("keypress", function (e) {
+  if (e.key === "Enter") {
+    const originalValue = parseFloat(this.value) || 0;
+    const processedValue = processInput(this, originalValue);
+    calculatePnL();
+    this.blur(); // Remove focus
+  }
+});
+
+stopLossInput.addEventListener("keypress", function (e) {
+  if (e.key === "Enter") {
+    const originalValue = parseFloat(this.value) || 0;
+    const processedValue = processInput(this, originalValue);
+    calculatePnL();
+    this.blur(); // Remove focus
+  }
+});
+
+// Handle input event for Take Profit and Stop Loss (but don't calculate immediately)
+takeProfitInput.addEventListener("input", function () {
+  // Just update the display, don't calculate yet
+  // This allows typing mathematical expressions without interruption
+});
+
+stopLossInput.addEventListener("input", function () {
+  // Just update the display, don't calculate yet
+  // This allows typing mathematical expressions without interruption
+});
 
 // Fee rates based on Bybit Inverse Perpetual & Futures Contract (as of 2024)
 const BYBIT_FEES = {
@@ -49,11 +253,6 @@ const BYBIT_FEES = {
   openMakerCloseTaker: 0.0375, // 0.0375% Open Maker - Close Taker
   maker: 0.02, // 0.02% Open Maker - Close Maker
 };
-
-// Function to update fee rate based on selected fee type
-function updateFeeRate() {
-  calculatePnL(); // Recalculate with new fee
-}
 
 // Main calculation function
 function calculatePnL() {
@@ -63,8 +262,17 @@ function calculatePnL() {
     const positionType = positionTypeSelect.value;
     const entryPrice = parseFloat(entryPriceInput.value) || 0;
     const capital = parseFloat(capitalInput.value) || 0;
-    const takeProfit = parseFloat(takeProfitInput.value) || 0;
-    const stopLoss = parseFloat(stopLossInput.value) || 0;
+
+    // Process Take Profit and Stop Loss inputs to handle mathematical expressions
+    const takeProfit = processInput(
+      takeProfitInput,
+      parseFloat(takeProfitInput.value) || 0
+    );
+    const stopLoss = processInput(
+      stopLossInput,
+      parseFloat(stopLossInput.value) || 0
+    );
+
     const feeType = feeTypeSelect.value;
     const feeRate = BYBIT_FEES[feeType];
 
@@ -276,17 +484,30 @@ function formatPercentage(value) {
 // Initialize calculator with default values
 document.addEventListener("DOMContentLoaded", function () {
   // Set some realistic default values
-  leverageInput.value = 10;
-  leverageValueEl.textContent = "10";
+  leverageInput.value = 4;
+  leverageValueEl.textContent = "4";
   entryPriceInput.value = 50000;
-  capitalInput.value = 100; // $1,000 USD
-  takeProfitInput.value = 55000;
-  stopLossInput.value = 45000;
+  capitalInput.value = 400; // $400 USD
+
+  // Calculate Take Profit and Stop Loss based on 6% of capital including fees (1:2 R:R)
+  const entryPrice = parseFloat(entryPriceInput.value);
+  const capital = parseFloat(capitalInput.value);
+  const leverage = parseFloat(leverageInput.value);
+  const feeType = feeTypeSelect.value;
+
+  const { takeProfit, stopLoss } = calculateTakeProfitAndStopLoss(
+    entryPrice,
+    capital,
+    leverage,
+    feeType
+  );
+
+  takeProfitInput.value = takeProfit;
+  stopLossInput.value = stopLoss;
 
   // Set initial values
   positionTypeSelect.value = "long"; // Default to long position
-  feeTypeSelect.value = "taker"; // Default to taker fee
-  updateFeeRate();
+  feeTypeSelect.value = "openMakerCloseTaker"; // Default to open maker, close taker
 
   // Calculate initial results
   calculatePnL();
