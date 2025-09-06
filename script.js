@@ -156,24 +156,26 @@ entryPriceInput.addEventListener("input", function () {
 });
 
 // Update Take Profit and Stop Loss when Capital changes
-capitalInput.addEventListener("input", function () {
-  const entryPrice = parseFloat(entryPriceInput.value) || 0;
-  const capital = parseFloat(this.value) || 0;
-  const leverage = parseFloat(leverageInput.value) || 1;
+[capitalInput, leverageInput].forEach((input) => {
+  input.addEventListener("input", function () {
+    const entryPrice = parseFloat(entryPriceInput.value) || 0;
+    const capital = parseFloat(this.value) || 0;
+    const leverage = parseFloat(leverageInput.value) || 1;
 
-  if (entryPrice > 0 && capital > 0) {
-    const feeType = feeTypeSelect.value;
-    const { takeProfit, stopLoss } = calculateTakeProfitAndStopLoss(
-      entryPrice,
-      capital,
-      leverage,
-      feeType,
-      positionTypeSelect.value
-    );
-    takeProfitInput.value = takeProfit;
-    stopLossInput.value = stopLoss;
-  }
-  calculatePnL(); // Recalculate with new values
+    if (entryPrice > 0 && capital > 0) {
+      const feeType = feeTypeSelect.value;
+      const { takeProfit, stopLoss } = calculateTakeProfitAndStopLoss(
+        entryPrice,
+        capital,
+        leverage,
+        feeType,
+        positionTypeSelect.value
+      );
+      takeProfitInput.value = takeProfit;
+      stopLossInput.value = stopLoss;
+    }
+    calculatePnL(); // Recalculate with new values
+  });
 });
 
 // Update Take Profit and Stop Loss when Position Type changes
