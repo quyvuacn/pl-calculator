@@ -59,14 +59,15 @@ function calculateTakeProfitAndStopLoss(
   entryPrice,
   capital,
   leverage,
-  feeType
+  feeType,
+  positionType = "long"
 ) {
   if (entryPrice <= 0 || capital <= 0 || leverage <= 0) {
     return { takeProfit: entryPrice, stopLoss: entryPrice };
   }
 
-  // Calculate Stop Loss based on 6% of capital (vốn ban đầu) including fees
-  const maxLossAmount = capital * 0.06; // 6% of capital (vốn ban đầu) including fees
+  // Calculate Stop Loss based on 3% of capital (vốn ban đầu) excluding fees
+  const maxLossAmount = capital * 0.03; // 3% of capital (vốn ban đầu) excluding fees
   const positionSize = capital * leverage;
 
   // Get current fee rate
@@ -76,15 +77,22 @@ function calculateTakeProfitAndStopLoss(
   // Calculate fees for the position
   const totalFees = positionSize * totalFeeRate;
 
-  // Calculate price change needed to lose 6% of capital (including fees)
-  const netLossAmount = maxLossAmount - totalFees; // Loss amount excluding fees
-  const priceChangeForLoss = (netLossAmount / positionSize) * entryPrice;
-  const stopLoss = Math.round((entryPrice - priceChangeForLoss) * 100) / 100;
+  // Calculate price change needed to lose 3% of capital (excluding fees)
+  const priceChangeForLoss = (maxLossAmount / positionSize) * entryPrice;
 
-  // Calculate Take Profit for 1:2 R:R (2x the loss amount)
-  const priceChangeForProfit = priceChangeForLoss * 2;
-  const takeProfit =
-    Math.round((entryPrice + priceChangeForProfit) * 100) / 100;
+  let takeProfit, stopLoss;
+
+  if (positionType === "long") {
+    // Long position: Take Profit above entry, Stop Loss below entry
+    stopLoss = Math.round((entryPrice - priceChangeForLoss) * 100) / 100;
+    const priceChangeForProfit = priceChangeForLoss * 2;
+    takeProfit = Math.round((entryPrice + priceChangeForProfit) * 100) / 100;
+  } else {
+    // Short position: Take Profit below entry, Stop Loss above entry
+    stopLoss = Math.round((entryPrice + priceChangeForLoss) * 100) / 100;
+    const priceChangeForProfit = priceChangeForLoss * 2;
+    takeProfit = Math.round((entryPrice - priceChangeForProfit) * 100) / 100;
+  }
 
   return { takeProfit, stopLoss };
 }
@@ -115,30 +123,16 @@ const lossRoiEl = document.getElementById("lossRoi");
 
 // Event Listeners
 // Auto-calculate when inputs change (except Take Profit and Stop Loss)
-[leverageInput, entryPriceInput, capitalInput].forEach((input) => {
+[entryPriceInput, capitalInput].forEach((input) => {
   input.addEventListener("input", calculatePnL);
 });
 
 // Update leverage value display when slider moves
 leverageInput.addEventListener("input", function () {
   leverageValueEl.textContent = this.value;
-
-  // Also update Take Profit and Stop Loss when leverage changes
-  const entryPrice = parseFloat(entryPriceInput.value) || 0;
-  const capital = parseFloat(capitalInput.value) || 0;
-  const leverage = parseFloat(this.value) || 1;
-
-  if (entryPrice > 0 && capital > 0) {
-    const feeType = feeTypeSelect.value;
-    const { takeProfit, stopLoss } = calculateTakeProfitAndStopLoss(
-      entryPrice,
-      capital,
-      leverage,
-      feeType
-    );
-    takeProfitInput.value = takeProfit;
-    stopLossInput.value = stopLoss;
-  }
+  // Recalculate P&L with current Take Profit and Stop Loss values
+  // Don't change Take Profit and Stop Loss when leverage changes
+  calculatePnL();
 });
 
 // Update Take Profit and Stop Loss when Entry Price changes
@@ -173,7 +167,8 @@ capitalInput.addEventListener("input", function () {
       entryPrice,
       capital,
       leverage,
-      feeType
+      feeType,
+      positionTypeSelect.value
     );
     takeProfitInput.value = takeProfit;
     stopLossInput.value = stopLoss;
@@ -181,11 +176,30 @@ capitalInput.addEventListener("input", function () {
   calculatePnL(); // Recalculate with new values
 });
 
-// Update calculations when position type changes
-positionTypeSelect.addEventListener("change", calculatePnL);
+// Update Take Profit and Stop Loss when Position Type changes
+positionTypeSelect.addEventListener("input", function () {
+  const entryPrice = parseFloat(entryPriceInput.value) || 0;
+  const capital = parseFloat(capitalInput.value) || 0;
+  const leverage = parseFloat(leverageInput.value) || 1;
+
+  if (entryPrice > 0 && capital > 0) {
+    const feeType = feeTypeSelect.value;
+    const positionType = this.value;
+    const { takeProfit, stopLoss } = calculateTakeProfitAndStopLoss(
+      entryPrice,
+      capital,
+      leverage,
+      feeType,
+      positionType
+    );
+    takeProfitInput.value = takeProfit;
+    stopLossInput.value = stopLoss;
+  }
+  calculatePnL(); // Recalculate with new position type
+});
 
 // Update Take Profit and Stop Loss when Fee Type changes
-feeTypeSelect.addEventListener("change", function () {
+feeTypeSelect.addEventListener("input", function () {
   const entryPrice = parseFloat(entryPriceInput.value) || 0;
   const capital = parseFloat(capitalInput.value) || 0;
   const leverage = parseFloat(leverageInput.value) || 1;
@@ -196,7 +210,8 @@ feeTypeSelect.addEventListener("change", function () {
       entryPrice,
       capital,
       leverage,
-      feeType
+      feeType,
+      positionTypeSelect.value
     );
     takeProfitInput.value = takeProfit;
     stopLossInput.value = stopLoss;
@@ -312,47 +327,48 @@ function calculatePnL() {
     if (positionType === "long") {
       // Long position calculations
       // Profit scenario (Take Profit - price goes up)
-      profitPriceChange = takeProfit - entryPrice;
+      profitPriceChange = takeProfit - entryPrice; // Positive for long profit
       profitPriceChangePercent =
         Math.round((profitPriceChange / entryPrice) * 100 * 100) / 100;
-      // For long: profit when price goes up
+      // For long: P&L = (Exit - Entry) / Entry × Leverage × Capital - Fees
       const profitGrossPnL =
         Math.round(
-          capital * leverage * (profitPriceChange / entryPrice) * 100
+          (profitPriceChange / entryPrice) * leverage * capital * 100
         ) / 100;
       profitPnL = Math.round((profitGrossPnL - totalFees) * 100) / 100;
 
       // Loss scenario (Stop Loss - price goes down)
-      lossPriceChange = stopLoss - entryPrice;
+      lossPriceChange = stopLoss - entryPrice; // Negative for long loss
       lossPriceChangePercent =
         Math.round((lossPriceChange / entryPrice) * 100 * 100) / 100;
-      // For long: loss when price goes down
+      // For long: P&L = (Exit - Entry) / Entry × Leverage × Capital - Fees
       const lossGrossPnL =
-        Math.round(capital * leverage * (lossPriceChange / entryPrice) * 100) /
+        Math.round((lossPriceChange / entryPrice) * leverage * capital * 100) /
         100;
-      lossPnL = Math.round((lossGrossPnL - totalFees) * 100) / 100; // SUBTRACT fees from loss
+      lossPnL = Math.round((lossGrossPnL - totalFees) * 100) / 100;
     } else {
       // Short position calculations
       // Profit scenario (Take Profit - price goes down)
-      profitPriceChange = entryPrice - takeProfit;
+      profitPriceChange = takeProfit - entryPrice; // Negative for short profit
       profitPriceChangePercent =
         Math.round((profitPriceChange / entryPrice) * 100 * 100) / 100;
-      // For short: profit when price goes down
+      // For short: P&L = (Entry - Exit) / Entry × Leverage × Capital - Fees
       const profitGrossPnL =
         Math.round(
-          capital * leverage * (profitPriceChange / entryPrice) * 100
+          ((entryPrice - takeProfit) / entryPrice) * leverage * capital * 100
         ) / 100;
       profitPnL = Math.round((profitGrossPnL - totalFees) * 100) / 100;
 
       // Loss scenario (Stop Loss - price goes up)
-      lossPriceChange = entryPrice - stopLoss;
+      lossPriceChange = stopLoss - entryPrice; // Positive for short loss
       lossPriceChangePercent =
         Math.round((lossPriceChange / entryPrice) * 100 * 100) / 100;
-      // For short: loss when price goes up
+      // For short: P&L = (Entry - Exit) / Entry × Leverage × Capital - Fees
       const lossGrossPnL =
-        Math.round(capital * leverage * (lossPriceChange / entryPrice) * 100) /
-        100;
-      lossPnL = Math.round((lossGrossPnL - totalFees) * 100) / 100; // SUBTRACT fees from loss
+        Math.round(
+          ((entryPrice - stopLoss) / entryPrice) * leverage * capital * 100
+        ) / 100;
+      lossPnL = Math.round((lossGrossPnL - totalFees) * 100) / 100;
     }
 
     // Calculate ROI for both scenarios
@@ -489,7 +505,7 @@ document.addEventListener("DOMContentLoaded", function () {
   entryPriceInput.value = 50000;
   capitalInput.value = 400; // $400 USD
 
-  // Calculate Take Profit and Stop Loss based on 6% of capital including fees (1:2 R:R)
+  // Calculate Take Profit and Stop Loss based on 3% of capital excluding fees (1:2 R:R)
   const entryPrice = parseFloat(entryPriceInput.value);
   const capital = parseFloat(capitalInput.value);
   const leverage = parseFloat(leverageInput.value);
@@ -499,7 +515,8 @@ document.addEventListener("DOMContentLoaded", function () {
     entryPrice,
     capital,
     leverage,
-    feeType
+    feeType,
+    positionTypeSelect.value
   );
 
   takeProfitInput.value = takeProfit;
@@ -516,7 +533,7 @@ document.addEventListener("DOMContentLoaded", function () {
 // Add some helpful tooltips and validation
 function addInputValidation() {
   // Leverage validation (slider already limits to 1-100)
-  leverageInput.addEventListener("change", function () {
+  leverageInput.addEventListener("input", function () {
     const value = parseInt(this.value);
     if (value < 1) {
       this.value = 1;
