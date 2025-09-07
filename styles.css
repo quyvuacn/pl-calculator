@@ -509,4 +509,332 @@ input:focus, select:focus {
 .result-item:nth-child(9) { animation-delay: 0.9s; }
 .result-item:nth-child(10) { animation-delay: 1.0s; }
 .result-item:nth-child(11) { animation-delay: 1.1s; }
-.result-item:nth-child(12) { animation-delay: 1.2s; } 
+.result-item:nth-child(12) { animation-delay: 1.2s; }
+
+/* Config Section */
+.config-section {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.config-btn {
+    background: #6c757d;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+
+.config-btn:hover {
+    background: #5a6268;
+    transform: translateY(-2px);
+}
+
+/* Config Dialog */
+.config-dialog {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    backdrop-filter: blur(5px);
+}
+
+.config-dialog.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.config-dialog-content {
+    background: white;
+    border-radius: 15px;
+    width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50px) scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.config-dialog-header {
+    background: #4A90E2;
+    color: white;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.config-dialog-header h3 {
+    margin: 0;
+    font-size: 1.4rem;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background 0.2s;
+}
+
+.close-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.config-dialog-body {
+    padding: 0;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+/* Config Tabs */
+.config-tabs {
+    display: flex;
+    background: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    overflow-x: auto;
+}
+
+.config-tab {
+    background: none;
+    border: none;
+    padding: 15px 20px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: #6c757d;
+    white-space: nowrap;
+    transition: all 0.2s;
+    border-bottom: 3px solid transparent;
+}
+
+.config-tab:hover {
+    background: #e9ecef;
+    color: #495057;
+}
+
+.config-tab.active {
+    color: #4A90E2;
+    border-bottom-color: #4A90E2;
+    background: white;
+}
+
+/* Config Content */
+.config-content {
+    padding: 20px;
+}
+
+.config-tab-content {
+    display: none;
+}
+
+.config-tab-content.active {
+    display: block;
+}
+
+.config-tab-content h4 {
+    margin: 0 0 20px 0;
+    color: #333;
+    font-size: 1.1rem;
+}
+
+.config-group {
+    margin-bottom: 15px;
+}
+
+.config-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: #555;
+}
+
+.config-group input,
+.config-group select {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid #e1e5e9;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: border-color 0.2s;
+}
+
+.config-group input:focus,
+.config-group select:focus {
+    outline: none;
+    border-color: #4A90E2;
+}
+
+.config-group small {
+    display: block;
+    margin-top: 5px;
+    color: #6c757d;
+    font-size: 12px;
+}
+
+.config-section-title {
+    font-weight: 600;
+    color: #333;
+    margin: 20px 0 10px 0;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #e1e5e9;
+}
+
+/* Config Actions */
+.config-actions {
+    display: flex;
+    gap: 10px;
+    margin: 20px 0;
+}
+
+.config-action-btn {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.config-action-btn {
+    background: #4A90E2;
+    color: white;
+}
+
+.config-action-btn:hover {
+    background: #357abd;
+}
+
+.config-action-btn.secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.config-action-btn.secondary:hover {
+    background: #5a6268;
+}
+
+/* Sync Status */
+.sync-status {
+    padding: 10px;
+    border-radius: 6px;
+    font-size: 14px;
+    margin-top: 10px;
+}
+
+.sync-status.success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.sync-status.error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.sync-status.info {
+    background: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+}
+
+/* Config Dialog Footer */
+.config-dialog-footer {
+    background: #f8f9fa;
+    padding: 20px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    border-top: 1px solid #dee2e6;
+}
+
+.save-btn, .cancel-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.save-btn {
+    background: #28a745;
+    color: white;
+}
+
+.save-btn:hover {
+    background: #218838;
+}
+
+.cancel-btn {
+    background: #6c757d;
+    color: white;
+}
+
+.cancel-btn:hover {
+    background: #5a6268;
+}
+
+/* Config Dialog Mobile Responsive */
+@media (max-width: 768px) {
+    .config-dialog-content {
+        width: 95%;
+        max-height: 95vh;
+    }
+    
+    .config-tabs {
+        flex-wrap: wrap;
+    }
+    
+    .config-tab {
+        flex: 1;
+        min-width: 120px;
+    }
+    
+    .config-actions {
+        flex-direction: column;
+    }
+    
+    .config-dialog-footer {
+        flex-direction: column;
+    }
+    
+    .save-btn, .cancel-btn {
+        width: 100%;
+    }
+} 

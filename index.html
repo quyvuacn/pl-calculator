@@ -32,19 +32,19 @@
 
                     <div class="input-group">
                         <label for="entryPrice">Entry Price</label>
-                        <input type="number" id="entryPrice" min="0.000001" value="50000" step="0.01">
+                        <input type="number" id="entryPrice" min="0.000001" value="100000" step="0.01">
                     </div>
                 </div>
 
                 <div class="price-inputs-row">
                     <div class="input-group">
                         <label for="takeProfit">Take Profit</label>
-                        <input type="text" id="takeProfit" value="55000" placeholder="5000, 5000+100 or 5000-50">
+                        <input type="text" id="takeProfit" value="110000" placeholder="5000, 5000+100 or 5000-50">
                     </div>
 
                     <div class="input-group">
                         <label for="stopLoss">Stop Loss</label>
-                        <input type="text" id="stopLoss" value="45000" placeholder="5000, 5000-100 or 5000+50">
+                        <input type="text" id="stopLoss" value="90000" placeholder="5000, 5000-100 or 5000+50">
                     </div>
                 </div>
 
@@ -124,6 +124,174 @@
                 </div>
             </div>
         </div>
+
+        <!-- Config Settings Button -->
+        <div class="config-section">
+            <button id="configBtn" class="config-btn" title="Cài đặt cấu hình">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11.03L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.22,8.95 2.27,9.22 2.46,9.37L4.57,11.03C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.22,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.68 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z"/>
+                </svg>
+                Cài đặt
+            </button>
+        </div>
+    </div>
+
+    <!-- Config Dialog -->
+    <div id="configDialog" class="config-dialog">
+        <div class="config-dialog-content">
+            <div class="config-dialog-header">
+                <h3>Cài đặt cấu hình</h3>
+                <button id="closeConfigBtn" class="close-btn">&times;</button>
+            </div>
+            
+            <div class="config-dialog-body">
+                <div class="config-tabs">
+                    <button class="config-tab active" data-tab="fees">Phí giao dịch</button>
+                    <button class="config-tab" data-tab="defaults">Giá trị mặc định</button>
+                    <button class="config-tab" data-tab="risk">Quản lý rủi ro</button>
+                    <button class="config-tab" data-tab="validation">Giới hạn</button>
+                    <button class="config-tab" data-tab="messages">Thông báo</button>
+                    <button class="config-tab" data-tab="sync">Đồng bộ</button>
+                </div>
+
+                <div class="config-content">
+                    <!-- Fees Tab -->
+                    <div id="fees-tab" class="config-tab-content active">
+                        <h4>Phí giao dịch Bybit (%)</h4>
+                        <div class="config-group">
+                            <label for="fee-taker">Taker Fee:</label>
+                            <input type="number" id="fee-taker" step="0.001" min="0">
+                        </div>
+                        <div class="config-group">
+                            <label for="fee-maker-taker">Open Maker - Close Taker:</label>
+                            <input type="number" id="fee-maker-taker" step="0.001" min="0">
+                        </div>
+                        <div class="config-group">
+                            <label for="fee-maker">Maker Fee:</label>
+                            <input type="number" id="fee-maker" step="0.001" min="0">
+                        </div>
+                    </div>
+
+                    <!-- Defaults Tab -->
+                    <div id="defaults-tab" class="config-tab-content">
+                        <h4>Giá trị mặc định</h4>
+                        <div class="config-group">
+                            <label for="default-leverage">Đòn bẩy:</label>
+                            <input type="number" id="default-leverage" min="1" max="100">
+                        </div>
+                        <div class="config-group">
+                            <label for="default-entry-price">Entry Price:</label>
+                            <input type="number" id="default-entry-price" min="0" step="0.01">
+                        </div>
+                        <div class="config-group">
+                            <label for="default-capital">Số vốn ($):</label>
+                            <input type="number" id="default-capital" min="100" step="10">
+                        </div>
+                        <div class="config-group">
+                            <label for="default-position-type">Vị thế:</label>
+                            <select id="default-position-type">
+                                <option value="long">Long</option>
+                                <option value="short">Short</option>
+                            </select>
+                        </div>
+                        <div class="config-group">
+                            <label for="default-fee-type">Loại phí:</label>
+                            <select id="default-fee-type">
+                                <option value="taker">Taker</option>
+                                <option value="openMakerCloseTaker">Open Maker - Close Taker</option>
+                                <option value="maker">Maker</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Risk Tab -->
+                    <div id="risk-tab" class="config-tab-content">
+                        <h4>Quản lý rủi ro</h4>
+                        <div class="config-group">
+                            <label for="max-loss-percentage">Tỷ lệ thua tối đa (%):</label>
+                            <input type="number" id="max-loss-percentage" step="0.01" min="0" max="100">
+                        </div>
+                        <div class="config-group">
+                            <label for="risk-reward-ratio">Tỷ lệ Risk:Reward:</label>
+                            <input type="number" id="risk-reward-ratio" step="0.1" min="0.1">
+                        </div>
+                    </div>
+
+                    <!-- Validation Tab -->
+                    <div id="validation-tab" class="config-tab-content">
+                        <h4>Giới hạn validation</h4>
+                        <div class="config-section-title">Đòn bẩy</div>
+                        <div class="config-group">
+                            <label for="leverage-min">Tối thiểu:</label>
+                            <input type="number" id="leverage-min" min="1">
+                        </div>
+                        <div class="config-group">
+                            <label for="leverage-max">Tối đa:</label>
+                            <input type="number" id="leverage-max" min="1">
+                        </div>
+                        
+                        <div class="config-section-title">Giá</div>
+                        <div class="config-group">
+                            <label for="price-min">Tối thiểu:</label>
+                            <input type="number" id="price-min" step="0.000001" min="0">
+                        </div>
+                        
+                        <div class="config-section-title">Vốn</div>
+                        <div class="config-group">
+                            <label for="capital-min">Tối thiểu ($):</label>
+                            <input type="number" id="capital-min" min="1">
+                        </div>
+                    </div>
+
+                    <!-- Messages Tab -->
+                    <div id="messages-tab" class="config-tab-content">
+                        <h4>Thông báo lỗi</h4>
+                        <div class="config-group">
+                            <label for="entry-price-error">Lỗi Entry Price:</label>
+                            <input type="text" id="entry-price-error">
+                        </div>
+                        <div class="config-group">
+                            <label for="take-profit-error">Lỗi Take Profit:</label>
+                            <input type="text" id="take-profit-error">
+                        </div>
+                        <div class="config-group">
+                            <label for="stop-loss-error">Lỗi Stop Loss:</label>
+                            <input type="text" id="stop-loss-error">
+                        </div>
+                    </div>
+
+                    <!-- Sync Tab -->
+                    <div id="sync-tab" class="config-tab-content">
+                        <h4>Đồng bộ với Google Sheets</h4>
+                        <div class="config-group">
+                            <label for="sheets-url">Google Sheets URL:</label>
+                            <input type="url" id="sheets-url" placeholder="https://docs.google.com/spreadsheets/d/...">
+                            <small>URL export CSV từ Google Sheets</small>
+                        </div>
+                        <div class="config-group">
+                            <label>
+                                <input type="checkbox" id="use-local-storage">
+                                Sử dụng Local Storage làm backup
+                            </label>
+                        </div>
+                        <div class="config-group">
+                            <label for="cache-duration">Thời gian cache (phút):</label>
+                            <input type="number" id="cache-duration" min="1" max="1440">
+                        </div>
+                        <div class="config-actions">
+                            <button id="fetchConfigBtn" class="config-action-btn">Tải config từ Sheets</button>
+                            <button id="resetConfigBtn" class="config-action-btn secondary">Reset về mặc định</button>
+                        </div>
+                        <div id="sync-status" class="sync-status"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="config-dialog-footer">
+                <button id="saveConfigBtn" class="save-btn">Lưu cài đặt</button>
+                <button id="cancelConfigBtn" class="cancel-btn">Hủy</button>
+            </div>
+        </div>
     </div>
 
     <!-- <div class="iframe-container">
@@ -133,6 +301,7 @@
         </div>
     </div> -->
 
+    <script src="config.js"></script>
     <script src="script.js"></script>
 </body>
 

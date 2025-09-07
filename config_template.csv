@@ -1,0 +1,18 @@
+key,value,type
+BYBIT_FEES.taker,0.055,number
+BYBIT_FEES.openMakerCloseTaker,0.0375,number
+BYBIT_FEES.maker,0.02,number
+DEFAULT_VALUES.leverage,4,number
+DEFAULT_VALUES.entryPrice,50000,number
+DEFAULT_VALUES.capital,400,number
+DEFAULT_VALUES.positionType,long,string
+DEFAULT_VALUES.feeType,openMakerCloseTaker,string
+RISK_SETTINGS.maxLossPercentage,0.03,number
+RISK_SETTINGS.riskRewardRatio,2,number
+VALIDATION_LIMITS.leverage.min,1,number
+VALIDATION_LIMITS.leverage.max,100,number
+VALIDATION_LIMITS.price.min,0.000001,number
+VALIDATION_LIMITS.capital.min,100,number
+MESSAGES.entryPriceError,Giá vào lệnh phải lớn hơn 0.,string
+MESSAGES.takeProfitError,Take Profit phải lớn hơn 0.,string
+MESSAGES.stopLossError,Stop Loss phải lớn hơn 0.,string

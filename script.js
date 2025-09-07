@@ -66,12 +66,12 @@ function calculateTakeProfitAndStopLoss(
     return { takeProfit: entryPrice, stopLoss: entryPrice };
   }
 
-  // Calculate Stop Loss based on 3% of capital (vốn ban đầu) excluding fees
-  const maxLossAmount = capital * 0.03; // 3% of capital (vốn ban đầu) excluding fees
+  // Calculate Stop Loss based on configured max loss percentage of capital (vốn ban đầu) excluding fees
+  const maxLossAmount = capital * currentConfig.RISK_SETTINGS.maxLossPercentage; // Configured % of capital (vốn ban đầu) excluding fees
   const positionSize = capital * leverage;
 
   // Get current fee rate
-  const feeRate = BYBIT_FEES[feeType] / 100; // Convert to decimal
+  const feeRate = currentConfig.BYBIT_FEES[feeType] / 100; // Convert to decimal
   const totalFeeRate = feeRate * 2; // Entry + Exit fees
 
   // Calculate fees for the position
@@ -85,12 +85,12 @@ function calculateTakeProfitAndStopLoss(
   if (positionType === "long") {
     // Long position: Take Profit above entry, Stop Loss below entry
     stopLoss = Math.round((entryPrice - priceChangeForLoss) * 100) / 100;
-    const priceChangeForProfit = priceChangeForLoss * 2;
+    const priceChangeForProfit = priceChangeForLoss * currentConfig.RISK_SETTINGS.riskRewardRatio;
     takeProfit = Math.round((entryPrice + priceChangeForProfit) * 100) / 100;
   } else {
     // Short position: Take Profit below entry, Stop Loss above entry
     stopLoss = Math.round((entryPrice + priceChangeForLoss) * 100) / 100;
-    const priceChangeForProfit = priceChangeForLoss * 2;
+    const priceChangeForProfit = priceChangeForLoss * currentConfig.RISK_SETTINGS.riskRewardRatio;
     takeProfit = Math.round((entryPrice - priceChangeForProfit) * 100) / 100;
   }
 
@@ -264,12 +264,6 @@ stopLossInput.addEventListener("input", function () {
   // This allows typing mathematical expressions without interruption
 });
 
-// Fee rates based on Bybit Inverse Perpetual & Futures Contract (as of 2024)
-const BYBIT_FEES = {
-  taker: 0.055, // 0.055% Open Taker - Close Taker
-  openMakerCloseTaker: 0.0375, // 0.0375% Open Maker - Close Taker
-  maker: 0.02, // 0.02% Open Maker - Close Maker
-};
 
 // Main calculation function
 function calculatePnL() {
@@ -291,7 +285,7 @@ function calculatePnL() {
     );
 
     const feeType = feeTypeSelect.value;
-    const feeRate = BYBIT_FEES[feeType];
+    const feeRate = currentConfig.BYBIT_FEES[feeType];
 
     // Validate inputs
     if (
@@ -499,13 +493,276 @@ function formatPercentage(value) {
   }).format(value / 100);
 }
 
+// Global config variables
+let currentConfig = null;
+
+// Load configuration from various sources
+async function loadConfiguration() {
+  try {
+    currentConfig = await configManager.getConfig();
+    console.log('Configuration loaded:', currentConfig);
+  } catch (error) {
+    console.error('Failed to load configuration:', error);
+    // Use default config as fallback
+    currentConfig = {
+      BYBIT_FEES,
+      DEFAULT_VALUES,
+      RISK_SETTINGS,
+      VALIDATION_LIMITS,
+      MESSAGES
+    };
+  }
+}
+
+// Config Dialog Management
+function initializeConfigDialog() {
+  const configBtn = document.getElementById('configBtn');
+  const configDialog = document.getElementById('configDialog');
+  const closeConfigBtn = document.getElementById('closeConfigBtn');
+  const cancelConfigBtn = document.getElementById('cancelConfigBtn');
+  const saveConfigBtn = document.getElementById('saveConfigBtn');
+  const fetchConfigBtn = document.getElementById('fetchConfigBtn');
+  const resetConfigBtn = document.getElementById('resetConfigBtn');
+
+  // Tab switching
+  const configTabs = document.querySelectorAll('.config-tab');
+  const configTabContents = document.querySelectorAll('.config-tab-content');
+
+  configTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const targetTab = tab.getAttribute('data-tab');
+      
+      // Remove active class from all tabs and contents
+      configTabs.forEach(t => t.classList.remove('active'));
+      configTabContents.forEach(content => content.classList.remove('active'));
+      
+      // Add active class to clicked tab and corresponding content
+      tab.classList.add('active');
+      document.getElementById(`${targetTab}-tab`).classList.add('active');
+    });
+  });
+
+  // Open dialog
+  configBtn.addEventListener('click', () => {
+    populateConfigDialog();
+    configDialog.classList.add('show');
+  });
+
+  // Close dialog
+  const closeDialog = () => {
+    configDialog.classList.remove('show');
+  };
+
+  closeConfigBtn.addEventListener('click', closeDialog);
+  cancelConfigBtn.addEventListener('click', closeDialog);
+  
+  // Close on backdrop click
+  configDialog.addEventListener('click', (e) => {
+    if (e.target === configDialog) {
+      closeDialog();
+    }
+  });
+
+  // Save configuration
+  saveConfigBtn.addEventListener('click', async () => {
+    await saveConfigFromDialog();
+  });
+
+  // Fetch configuration
+  fetchConfigBtn.addEventListener('click', async () => {
+    await fetchConfigFromSheets();
+  });
+
+  // Reset configuration
+  resetConfigBtn.addEventListener('click', async () => {
+    await resetConfigToDefaults();
+  });
+}
+
+// Populate dialog with current config values
+function populateConfigDialog() {
+  if (!currentConfig) return;
+
+  // Fees tab
+  document.getElementById('fee-taker').value = currentConfig.BYBIT_FEES.taker;
+  document.getElementById('fee-maker-taker').value = currentConfig.BYBIT_FEES.openMakerCloseTaker;
+  document.getElementById('fee-maker').value = currentConfig.BYBIT_FEES.maker;
+
+  // Defaults tab
+  document.getElementById('default-leverage').value = currentConfig.DEFAULT_VALUES.leverage;
+  document.getElementById('default-entry-price').value = currentConfig.DEFAULT_VALUES.entryPrice;
+  document.getElementById('default-capital').value = currentConfig.DEFAULT_VALUES.capital;
+  document.getElementById('default-position-type').value = currentConfig.DEFAULT_VALUES.positionType;
+  document.getElementById('default-fee-type').value = currentConfig.DEFAULT_VALUES.feeType;
+
+  // Risk tab
+  document.getElementById('max-loss-percentage').value = currentConfig.RISK_SETTINGS.maxLossPercentage * 100;
+  document.getElementById('risk-reward-ratio').value = currentConfig.RISK_SETTINGS.riskRewardRatio;
+
+  // Validation tab
+  document.getElementById('leverage-min').value = currentConfig.VALIDATION_LIMITS.leverage.min;
+  document.getElementById('leverage-max').value = currentConfig.VALIDATION_LIMITS.leverage.max;
+  document.getElementById('price-min').value = currentConfig.VALIDATION_LIMITS.price.min;
+  document.getElementById('capital-min').value = currentConfig.VALIDATION_LIMITS.capital.min;
+
+  // Messages tab
+  document.getElementById('entry-price-error').value = currentConfig.MESSAGES.entryPriceError;
+  document.getElementById('take-profit-error').value = currentConfig.MESSAGES.takeProfitError;
+  document.getElementById('stop-loss-error').value = currentConfig.MESSAGES.stopLossError;
+
+  // Sync tab
+  document.getElementById('sheets-url').value = GOOGLE_SHEETS_CONFIG.sheetUrl;
+  document.getElementById('use-local-storage').checked = GOOGLE_SHEETS_CONFIG.useLocalStorage;
+  document.getElementById('cache-duration').value = GOOGLE_SHEETS_CONFIG.cacheDuration / (60 * 1000); // Convert to minutes
+}
+
+// Save configuration from dialog
+async function saveConfigFromDialog() {
+  try {
+    const newConfig = {
+      BYBIT_FEES: {
+        taker: parseFloat(document.getElementById('fee-taker').value),
+        openMakerCloseTaker: parseFloat(document.getElementById('fee-maker-taker').value),
+        maker: parseFloat(document.getElementById('fee-maker').value),
+      },
+      DEFAULT_VALUES: {
+        leverage: parseInt(document.getElementById('default-leverage').value),
+        entryPrice: parseFloat(document.getElementById('default-entry-price').value),
+        capital: parseFloat(document.getElementById('default-capital').value),
+        positionType: document.getElementById('default-position-type').value,
+        feeType: document.getElementById('default-fee-type').value,
+      },
+      RISK_SETTINGS: {
+        maxLossPercentage: parseFloat(document.getElementById('max-loss-percentage').value) / 100,
+        riskRewardRatio: parseFloat(document.getElementById('risk-reward-ratio').value),
+      },
+      VALIDATION_LIMITS: {
+        leverage: {
+          min: parseInt(document.getElementById('leverage-min').value),
+          max: parseInt(document.getElementById('leverage-max').value),
+        },
+        price: {
+          min: parseFloat(document.getElementById('price-min').value),
+        },
+        capital: {
+          min: parseFloat(document.getElementById('capital-min').value),
+        },
+      },
+      MESSAGES: {
+        entryPriceError: document.getElementById('entry-price-error').value,
+        takeProfitError: document.getElementById('take-profit-error').value,
+        stopLossError: document.getElementById('stop-loss-error').value,
+      },
+    };
+
+    // Update Google Sheets config
+    GOOGLE_SHEETS_CONFIG.sheetUrl = document.getElementById('sheets-url').value;
+    GOOGLE_SHEETS_CONFIG.useLocalStorage = document.getElementById('use-local-storage').checked;
+    GOOGLE_SHEETS_CONFIG.cacheDuration = parseInt(document.getElementById('cache-duration').value) * 60 * 1000; // Convert to milliseconds
+
+    // Save configuration
+    const success = await configManager.saveConfig(newConfig);
+    
+    if (success) {
+      currentConfig = newConfig;
+      showSyncStatus('Cài đặt đã được lưu thành công!', 'success');
+      
+      // Update calculator with new values
+      updateCalculatorWithNewConfig();
+      
+      // Close dialog after a short delay
+      setTimeout(() => {
+        document.getElementById('configDialog').classList.remove('show');
+      }, 1500);
+    } else {
+      showSyncStatus('Lỗi khi lưu cài đặt!', 'error');
+    }
+  } catch (error) {
+    console.error('Error saving config:', error);
+    showSyncStatus('Lỗi khi lưu cài đặt: ' + error.message, 'error');
+  }
+}
+
+// Fetch configuration from Google Sheets
+async function fetchConfigFromSheets() {
+  try {
+    showSyncStatus('Đang tải cấu hình từ Google Sheets...', 'info');
+    
+    // Force refresh from Google Sheets
+    configManager.currentConfig = null;
+    configManager.lastFetchTime = 0;
+    
+    const newConfig = await configManager.getConfig();
+    
+    if (newConfig) {
+      currentConfig = newConfig;
+      populateConfigDialog();
+      updateCalculatorWithNewConfig();
+      showSyncStatus('Tải cấu hình thành công từ Google Sheets!', 'success');
+    } else {
+      showSyncStatus('Không thể tải từ Google Sheets, sử dụng cấu hình mặc định.', 'error');
+    }
+  } catch (error) {
+    console.error('Error fetching config:', error);
+    showSyncStatus('Lỗi khi tải cấu hình: ' + error.message, 'error');
+  }
+}
+
+// Reset configuration to defaults
+async function resetConfigToDefaults() {
+  try {
+    const defaultConfig = configManager.resetToDefaults();
+    currentConfig = defaultConfig;
+    populateConfigDialog();
+    updateCalculatorWithNewConfig();
+    showSyncStatus('Đã reset về cấu hình mặc định!', 'success');
+  } catch (error) {
+    console.error('Error resetting config:', error);
+    showSyncStatus('Lỗi khi reset cấu hình: ' + error.message, 'error');
+  }
+}
+
+// Update calculator with new configuration
+function updateCalculatorWithNewConfig() {
+  // Update default values in the calculator
+  leverageInput.value = currentConfig.DEFAULT_VALUES.leverage;
+  leverageValueEl.textContent = currentConfig.DEFAULT_VALUES.leverage.toString();
+  entryPriceInput.value = currentConfig.DEFAULT_VALUES.entryPrice;
+  capitalInput.value = currentConfig.DEFAULT_VALUES.capital;
+  positionTypeSelect.value = currentConfig.DEFAULT_VALUES.positionType;
+  feeTypeSelect.value = currentConfig.DEFAULT_VALUES.feeType;
+
+  // Update validation limits
+  leverageInput.min = currentConfig.VALIDATION_LIMITS.leverage.min;
+  leverageInput.max = currentConfig.VALIDATION_LIMITS.leverage.max;
+
+  // Recalculate with new values
+  calculatePnL();
+}
+
+// Show sync status message
+function showSyncStatus(message, type) {
+  const syncStatus = document.getElementById('sync-status');
+  syncStatus.textContent = message;
+  syncStatus.className = `sync-status ${type}`;
+  
+  // Clear message after 5 seconds
+  setTimeout(() => {
+    syncStatus.textContent = '';
+    syncStatus.className = 'sync-status';
+  }, 5000);
+}
+
 // Initialize calculator with default values
-document.addEventListener("DOMContentLoaded", function () {
-  // Set some realistic default values
-  leverageInput.value = 4;
-  leverageValueEl.textContent = "4";
-  entryPriceInput.value = 50000;
-  capitalInput.value = 400; // $400 USD
+document.addEventListener("DOMContentLoaded", async function () {
+  // Load configuration
+  await loadConfiguration();
+  
+  // Set default values from config
+  leverageInput.value = currentConfig.DEFAULT_VALUES.leverage;
+  leverageValueEl.textContent = currentConfig.DEFAULT_VALUES.leverage.toString();
+  entryPriceInput.value = currentConfig.DEFAULT_VALUES.entryPrice;
+  capitalInput.value = currentConfig.DEFAULT_VALUES.capital;
 
   // Calculate Take Profit and Stop Loss based on 3% of capital excluding fees (1:2 R:R)
   const entryPrice = parseFloat(entryPriceInput.value);
@@ -524,25 +781,28 @@ document.addEventListener("DOMContentLoaded", function () {
   takeProfitInput.value = takeProfit;
   stopLossInput.value = stopLoss;
 
-  // Set initial values
-  positionTypeSelect.value = "long"; // Default to long position
-  feeTypeSelect.value = "openMakerCloseTaker"; // Default to open maker, close taker
+  // Set initial values from config
+  positionTypeSelect.value = currentConfig.DEFAULT_VALUES.positionType;
+  feeTypeSelect.value = currentConfig.DEFAULT_VALUES.feeType;
 
+  // Initialize config dialog
+  initializeConfigDialog();
+  
   // Calculate initial results
   calculatePnL();
 });
 
 // Add some helpful tooltips and validation
 function addInputValidation() {
-  // Leverage validation (slider already limits to 1-100)
+  // Leverage validation using config limits
   leverageInput.addEventListener("input", function () {
     const value = parseInt(this.value);
-    if (value < 1) {
-      this.value = 1;
-      leverageValueEl.textContent = "1";
-    } else if (value > 100) {
-      this.value = 100;
-      leverageValueEl.textContent = "100";
+    if (value < currentConfig.VALIDATION_LIMITS.leverage.min) {
+      this.value = currentConfig.VALIDATION_LIMITS.leverage.min;
+      leverageValueEl.textContent = currentConfig.VALIDATION_LIMITS.leverage.min.toString();
+    } else if (value > currentConfig.VALIDATION_LIMITS.leverage.max) {
+      this.value = currentConfig.VALIDATION_LIMITS.leverage.max;
+      leverageValueEl.textContent = currentConfig.VALIDATION_LIMITS.leverage.max.toString();
     }
   });
 
@@ -550,24 +810,24 @@ function addInputValidation() {
   entryPriceInput.addEventListener("blur", function () {
     const value = parseFloat(this.value);
     if (value <= 0) {
-      this.value = 0.01;
-      alert("Giá vào lệnh phải lớn hơn 0.");
+      this.value = currentConfig.VALIDATION_LIMITS.price.min;
+      alert(currentConfig.MESSAGES.entryPriceError);
     }
   });
 
   takeProfitInput.addEventListener("blur", function () {
     const value = parseFloat(this.value);
     if (value <= 0) {
-      this.value = 0.01;
-      alert("Take Profit phải lớn hơn 0.");
+      this.value = currentConfig.VALIDATION_LIMITS.price.min;
+      alert(currentConfig.MESSAGES.takeProfitError);
     }
   });
 
   stopLossInput.addEventListener("blur", function () {
     const value = parseFloat(this.value);
     if (value <= 0) {
-      this.value = 0.01;
-      alert("Stop Loss phải lớn hơn 0.");
+      this.value = currentConfig.VALIDATION_LIMITS.price.min;
+      alert(currentConfig.MESSAGES.stopLossError);
     }
   });
 }
